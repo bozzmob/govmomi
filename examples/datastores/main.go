@@ -35,15 +35,18 @@ import (
 )
 
 func main() {
+	fmt.Println("FIRST")
 	examples.Run(func(ctx context.Context, c *vim25.Client) error {
+		fmt.Println("ERROR")
 		// Create a view of Datastore objects
 		m := view.NewManager(c)
 
 		v, err := m.CreateContainerView(ctx, c.ServiceContent.RootFolder, []string{"Datastore"}, true)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
-
+		fmt.Println("SECOND")
 		defer v.Destroy(ctx)
 
 		// Retrieve summary property for all datastores
@@ -51,6 +54,8 @@ func main() {
 		var dss []mo.Datastore
 		err = v.Retrieve(ctx, []string{"Datastore"}, []string{"summary"}, &dss)
 		if err != nil {
+			fmt.Println("ERROR")
+			fmt.Println(err)
 			return err
 		}
 
@@ -68,7 +73,8 @@ func main() {
 		}
 
 		_ = tw.Flush()
-
+		fmt.Println("FINAL")
 		return nil
 	})
+	fmt.Println("END")
 }
