@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/vmware/govmomi/examples"
 	"github.com/vmware/govmomi/property"
@@ -94,8 +95,25 @@ import (
 // 	// es, err = me.Ancestors(ctx, c *vim25.Client, config.content.PropertyCollector, dc.Reference())
 // }
 
+// METHOD
+// func getDataCenter(ctx context.Context, c *vim25.Client, me mo.ManagedEntity) mo.Datacenter {
+// 	// c, err := govmomi.NewClient(ctx)
+// 	path, err := mo.Ancestors(ctx, c, c.ServiceContent.PropertyCollector, me.Reference())
+// 	if err != nil {
+// 		fmt.Printf("ERROR : %s | \n", err)
+// 	}
+// 	for i := range path {
+// 		if path[i].Reference().Type == "Datacenter" {
+// 			// log.Printf("Managed Entity Reference=%s DC=%s\n", mor.Reference(), path[i].Name)
+// 			return path[i]
+// 		}
+// 	}
+// 	return
+// }
+
 func main() {
 	examples.Run(func(ctx context.Context, c *vim25.Client) error {
+
 		// Create a view of Network types
 		m := view.NewManager(c)
 
@@ -117,11 +135,16 @@ func main() {
 		pc := property.DefaultCollector(c)
 
 		for _, cl := range clusters {
-			// var group mo.Folder
-			// fmt.Printf("DATACENTER %s | \n ", getDataCenter(cl.GetManagedEntity()))
-			me := cl.GetManagedEntity().Parent
-
-			fmt.Printf("DATACENTER %s | \n ", me)
+			path, err := mo.Ancestors(ctx, c, c.ServiceContent.PropertyCollector, cl.Reference())
+			if err != nil {
+				fmt.Printf("ERROR : %s | \n", err)
+			}
+			for i := range path {
+				if path[i].Reference().Type == "Datacenter" {
+					log.Printf("Managed Entity Reference=%s DC=%s\n", cl.Reference(), path[i].Name)
+				}
+			}
+			// fmt.Printf("DATACENTER %s | \n ", getDataCenter(ctx, c, cl))
 			fmt.Printf("Name: %s |\n", cl.Name)
 			// fmt.Printf("Datastore: %s \n| ", cl.Datastore)
 			fmt.Printf("Host: %s | \n", cl.Host)
