@@ -121,6 +121,7 @@ func main() {
 	examples.Run(func(ctx context.Context, client *vim25.Client) error {
 		// Create a view of Network types
 		m := view.NewManager(client)
+		println("first")
 
 		// clusterCv, err := m.CreateContainerView(ctx, c.ServiceContent.RootFolder, []string{"ClusterComputeResource"}, true)
 		// datacenterCv, err := m.CreateContainerView(ctx, c.ServiceContent.RootFolder, []string{"Datacenter"}, true)
@@ -131,6 +132,7 @@ func main() {
 		}
 
 		defer hostCv.Destroy(ctx)
+		println("first")
 
 		// cluster := Map.Any("ClusterComputeResource")
 		// datacenter := Map.Any("Datacenter")
@@ -192,6 +194,7 @@ func main() {
 		filter.Options = &types.WaitOptions{
 			MaxWaitSeconds: types.NewInt32(0),
 		}
+		println("3rd")
 
 		err = pc.CreateFilter(ctx, filter.CreateFilter)
 		if err != nil {
@@ -204,9 +207,11 @@ func main() {
 		}
 
 		wait := make(chan bool)
-
+		println("4th")
 		go func() {
+			println("inside go routine")
 			for {
+				println("inside for loop")
 				res, err := methods.WaitForUpdatesEx(ctx, client, &req)
 				if err != nil {
 					if ctx.Err() == context.Canceled {
@@ -219,8 +224,15 @@ func main() {
 					return
 				}
 
+						// Now change the VM power state, to generate a modify update
+				err = HostList(ctx,client)
+				if err != nil {
+					println(err)
+				}
+
 				set := res.Returnval
 				if set == nil {
+					println("set is nil")
 					// Retry if the result came back empty
 					// That's a normal case when MaxWaitSeconds is set to 0.
 					// It means we have no updates for now
@@ -231,8 +243,10 @@ func main() {
 				req.Version = set.Version
 
 				for _, fs := range set.FilterSet {
+					println("inside filter-set loop")
 					// We expect the enter of VM first
 					if fs.ObjectSet[0].Kind == types.ObjectUpdateKindEnter {
+						println("objectset is update 1")
 						wait <- true
 						// Keep going
 						continue
@@ -240,6 +254,7 @@ func main() {
 
 					// We also expect a modify due to the power state change
 					if fs.ObjectSet[0].Kind == types.ObjectUpdateKindModify {
+						println("objectset is update 2")
 						wait <- true
 						// Now we can return to stop the routine
 						return
@@ -248,12 +263,6 @@ func main() {
 			}
 		}()
 		<-wait
-
-		// Now change the VM power state, to generate a modify update
-		err = HostList(ctx,client)
-		if err != nil {
-			println(err)
-		}
 
 		// wait for the modify update.
 		<-wait
